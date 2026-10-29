@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>المشترين · ليفا سيتي</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="navbar">
+    <div class="logo">ليفا <span>سيتي</span></div>
+    <nav>
+        <a href="{{ url_for('dashboard') }}">لوحة التحكم</a>
+        <a href="{{ url_for('properties') }}">العقارات</a>
+        <a href="{{ url_for('buyers') }}" class="active">المشترين</a>
+        <a href="{{ url_for('payments') }}">المدفوعات</a>
+        {% if session.role == 'admin' %}
+        <a href="{{ url_for('users') }}">المستخدمين</a>
+        {% endif %}
+    </nav>
+    <div class="user-info">
+        <span>👤 {{ session.full_name }}</span>
+        <a href="{{ url_for('profile') }}" class="btn-sm btn-info">الملف الشخصي</a>
+        <a href="{{ url_for('logout') }}" class="logout-btn">خروج</a>
+    </div>
+</header>
+
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}<div class="alert alert-{{ cat }}">{{ msg }}</div>{% endfor %}
+    {% endwith %}
+
+    <h2 class="page-title">إدارة المشترين</h2>
+
+    <div class="form-card">
+        <h3>➕ إضافة مشتري جديد</h3>
+        <form method="POST" action="{{ url_for('add_buyer') }}">
+            <div class="form-grid">
+                <input type="text" name="name" placeholder="اسم المشتري الكامل" required>
+                <input type="text" name="phone" placeholder="رقم الهاتف">
+                <input type="text" name="national_id" placeholder="الرقم القومي / الهوية">
+                <select name="property_id">
+                    <option value="">-- اختر العقار (اختياري) --</option>
+                    {% for p in properties %}
+                        <option value="{{ p.id }}">{{ p.name }} — {{ "{:,.0f}".format(p.price) }} ر.س</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">إضافة المشتري ➕</button>
+        </form>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>الرقم القومي</th><th>العقار</th><th>التاريخ</th><th>إجراء</th></tr>
+            </thead>
+            <tbody>
+                {% for b in buyers %}
+                <tr>
+                    <td>{{ b.id }}</td>
+                    <td><b>{{ b.name }}</b></td>
+                    <td>{{ b.phone or '-' }}</td>
+                    <td>{{ b.national_id or '-' }}</td>
+                    <td>{{ b.property.name if b.property else '—' }}</td>
+                    <td>{{ b.purchase_date.strftime('%Y-%m-%d') }}</td>
+                    <td><a href="{{ url_for('delete_buyer', id=b.id) }}" class="btn btn-danger" onclick="return confirm('تأكيد الحذف؟')">حذف</a></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="empty-state">لا يوجد مشترون مسجلون</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

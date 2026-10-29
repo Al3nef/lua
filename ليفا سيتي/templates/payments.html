@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>المدفوعات · ليفا سيتي</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="navbar">
+    <div class="logo">ليفا <span>سيتي</span></div>
+    <nav>
+        <a href="{{ url_for('dashboard') }}">لوحة التحكم</a>
+        <a href="{{ url_for('properties') }}">العقارات</a>
+        <a href="{{ url_for('buyers') }}">المشترين</a>
+        <a href="{{ url_for('payments') }}" class="active">المدفوعات</a>
+        {% if session.role == 'admin' %}
+        <a href="{{ url_for('users') }}">المستخدمين</a>
+        {% endif %}
+    </nav>
+    <div class="user-info">
+        <span>👤 {{ session.full_name }}</span>
+        <a href="{{ url_for('profile') }}" class="btn-sm btn-info">الملف الشخصي</a>
+        <a href="{{ url_for('logout') }}" class="logout-btn">خروج</a>
+    </div>
+</header>
+
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}<div class="alert alert-{{ cat }}">{{ msg }}</div>{% endfor %}
+    {% endwith %}
+
+    <h2 class="page-title">إدارة المدفوعات المشفّرة</h2>
+
+    <div class="form-card">
+        <h3>➕ تسجيل دفعة جديدة</h3>
+        <form method="POST" action="{{ url_for('add_payment') }}">
+            <div class="form-grid">
+                <select name="buyer_id" required>
+                    <option value="">-- اختر المشتري --</option>
+                    {% for b in buyers %}
+                        <option value="{{ b.id }}">{{ b.name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="property_id">
+                    <option value="">-- العقار (اختياري) --</option>
+                    {% for p in properties %}
+                        <option value="{{ p.id }}">{{ p.name }} — رصيد: {{ "{:,.0f}".format(p.balance or 0) }} ر.س</option>
+                    {% endfor %}
+                </select>
+                <input type="number" name="amount" placeholder="المبلغ (ر.س)" step="0.01" required min="0">
+                <select name="payment_method">
+                    <option value="كاش">كاش</option>
+                    <option value="تحويل بنكي">تحويل بنكي</option>
+                    <option value="شيك">شيك</option>
+                    <option value="مدى">مدى</option>
+                    <option value="فيزا">فيزا</option>
+                </select>
+                <textarea name="notes" placeholder="ملاحظات" rows="1"></textarea>
+            </div>
+            <label style="display:flex; align-items:center; gap:8px; margin-bottom:15px; color:#6ee7b7; font-weight:600;">
+                <input type="checkbox" name="is_encrypted" checked>
+                🔒 تسجيل الدفعة كمشفّرة
+            </label>
+            <button type="submit" class="btn btn-primary">تسجيل الدفعة 🔒</button>
+        </form>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th><th>المشتري</th><th>العقار</th><th>المبلغ</th>
+                    <th>طريقة الدفع</th><th>التشفير</th><th>التاريخ</th><th>ملاحظات</th><th>إجراء</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td>{{ p.id }}</td>
+                    <td><b>{{ p.buyer.name if p.buyer else '-' }}</b></td>
+                    <td>{{ p.property.name if p.property else '-' }}</td>
+                    <td style="color:#34d399; font-weight:bold;">{{ "{:,.0f}".format(p.amount) }} ر.س</td>
+                    <td>{{ p.payment_method }}</td>
+                    <td>
+                        {% if p.is_encrypted %}
+                            <span class="badge success">🔒 مشفّر</span>
+                        {% else %}
+                            <span class="badge warning">غير مشفّر</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ p.payment_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ p.notes or '-' }}</td>
+                    <td><a href="{{ url_for('delete_payment', id=p.id) }}" class="btn btn-danger" onclick="return confirm('تأكيد الحذف؟')">حذف</a></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="9" class="empty-state">لا توجد مدفوعات مسجلة</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

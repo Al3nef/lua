@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة التحكم · ليفا سيتي</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="navbar">
+    <div class="logo">ليفا <span>سيتي</span></div>
+    <nav>
+        <a href="{{ url_for('dashboard') }}" class="active">لوحة التحكم</a>
+        <a href="{{ url_for('properties') }}">العقارات</a>
+        <a href="{{ url_for('buyers') }}">المشترين</a>
+        <a href="{{ url_for('payments') }}">المدفوعات</a>
+        {% if session.role == 'admin' %}
+        <a href="{{ url_for('users') }}">المستخدمين</a>
+        {% endif %}
+    </nav>
+    <div class="user-info">
+        <span>👤 {{ session.full_name }}</span>
+        <a href="{{ url_for('profile') }}" class="btn-sm btn-info">الملف الشخصي</a>
+        <a href="{{ url_for('logout') }}" class="logout-btn">خروج</a>
+    </div>
+</header>
+
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}<div class="alert alert-{{ cat }}">{{ msg }}</div>{% endfor %}
+    {% endwith %}
+
+    <h2 class="page-title">لوحة التحكم الرئيسية</h2>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="label">🏠 إجمالي العقارات</div>
+            <div class="value">{{ total_properties }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">👥 إجمالي المشترين</div>
+            <div class="value purple">{{ total_buyers }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">💰 إجمالي المبالغ المستلمة</div>
+            <div class="value green">{{ "{:,.0f}".format(total_payments) }} ر.س</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">🏦 إجمالي أرصدة العقارات</div>
+            <div class="value yellow">{{ "{:,.0f}".format(total_balance) }} ر.س</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">🏪 إجمالي المحلات</div>
+            <div class="value">{{ total_shops }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">✅ عقارات متاحة</div>
+            <div class="value yellow">{{ available }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">🔴 عقارات مباعة</div>
+            <div class="value">{{ sold }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">👥 مستخدمي النظام</div>
+            <div class="value purple">{{ total_users }}</div>
+        </div>
+    </div>
+
+    <h2 class="page-title">آخر الدفعات المشفّرة</h2>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>#</th><th>المشتري</th><th>العقار</th><th>المبلغ</th><th>الطريقة</th><th>التشفير</th><th>التاريخ</th></tr>
+            </thead>
+            <tbody>
+                {% for p in recent_payments %}
+                <tr>
+                    <td>{{ p.id }}</td>
+                    <td>{{ p.buyer.name if p.buyer else '-' }}</td>
+                    <td>{{ p.property.name if p.property else '-' }}</td>
+                    <td style="color:#34d399; font-weight:bold;">{{ "{:,.0f}".format(p.amount) }} ر.س</td>
+                    <td>{{ p.payment_method }}</td>
+                    <td>{% if p.is_encrypted %}<span class="badge success">🔒 مشفّر</span>{% else %}<span class="badge warning">غير مشفّر</span>{% endif %}</td>
+                    <td>{{ p.payment_date.strftime('%Y-%m-%d') }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="empty-state">لا توجد دفعات مسجلة بعد</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h2 class="page-title">آخر المشترين</h2>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>العقار</th><th>التاريخ</th></tr>
+            </thead>
+            <tbody>
+                {% for b in recent_buyers %}
+                <tr>
+                    <td>{{ b.id }}</td>
+                    <td>{{ b.name }}</td>
+                    <td>{{ b.phone or '-' }}</td>
+                    <td>{{ b.property.name if b.property else '-' }}</td>
+                    <td>{{ b.purchase_date.strftime('%Y-%m-%d') }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="empty-state">لا يوجد مشترون بعد</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
